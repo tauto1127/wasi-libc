@@ -1,4 +1,4 @@
-# `wasi-libc`
+# `wasi-libc` 
 
 `wasi-libc` is a libc for WebAssembly programs built on top of WASI system
 calls. It provides a wide array of POSIX-compatible C APIs, including support

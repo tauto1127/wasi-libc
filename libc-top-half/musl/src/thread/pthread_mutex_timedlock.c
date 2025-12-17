@@ -1,4 +1,5 @@
 #include "pthread_impl.h"
+#include "wasi_debug.h"
 
 #ifdef __wasilibc_unmodified_upstream
 #define IS32BIT(x) !((x)+0x80000000ULL>>32)
@@ -66,7 +67,7 @@ int __pthread_mutex_timedlock(pthread_mutex_t *restrict m, const struct timespec
 	int r, t, priv = (type & 128) ^ 128;
 
 	pthread_t self = __pthread_self();
-	printf("[timedlock enter] m=%p lock=0x%x own=%d self=%p tid=%d type=%d\n",
+	DEBUG_PRINTF("[timedlock enter] m=%p lock=0x%x own=%d self=%p tid=%d type=%d\n",
 	   m, m->_m_lock, own_before, self, self->tid, m->_m_type & 15);
 	r = __pthread_mutex_trylock(m);
 	if (r != EBUSY) return r;
@@ -95,7 +96,7 @@ int __pthread_mutex_timedlock(pthread_mutex_t *restrict m, const struct timespec
 		a_dec(&m->_m_waiters);
 		// ログ
 		int own_after = m->_m_lock & 0x3fffffff;
-    printf("[timedlock exit ] m=%p lock=0x%x own=%d self=%p tid=%d ret=%d\n",
+    DEBUG_PRINTF("[timedlock exit ] m=%p lock=0x%x own=%d self=%p tid=%d ret=%d\n",
            m, m->_m_lock, own_after, self, self->tid, r);
 	// 
 		if (r && r != EINTR) break;

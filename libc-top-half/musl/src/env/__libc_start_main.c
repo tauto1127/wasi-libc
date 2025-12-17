@@ -6,6 +6,7 @@
 #include "syscall.h"
 #include "atomic.h"
 #include "libc.h"
+#include "wasi_debug.h"
 
 static void dummy(void) {}
 weak_alias(dummy, _init);
@@ -22,7 +23,7 @@ __attribute__((__noinline__))
 #endif
 void __init_libc(char **envp, char *pn)
 {
-	printf("========== __init_libc called ==========\n");
+	DEBUG_PRINTF("========== __init_libc called ==========\n");
 	size_t i, *auxv, aux[AUX_CNT] = { 0 };
 	__environ = envp;
 	for (i=0; envp[i]; i++);

@@ -1,4 +1,5 @@
 #include "pthread_impl.h"
+#include "wasi_debug.h"
 
 int __pthread_mutex_trylock_owner(pthread_mutex_t *m)
 {
@@ -27,14 +28,14 @@ int __pthread_mutex_trylock_owner(pthread_mutex_t *m)
 	if (own == 0x3fffffff) return ENOTRECOVERABLE;
 #endif
 	if (own || (old && !(type & 4))) {
-		printf("[trylock_owner EBUSY] m=%p old=0x%x new=0x%x own=%d self=%p tid=%d type=%d\n",
+		DEBUG_PRINTF("[trylock_owner EBUSY] m=%p old=0x%x new=0x%x own=%d self=%p tid=%d type=%d\n",
 			   m, old, tid, tid & 0x3fffffff, self, self->tid, type & 15);
 		return EBUSY;
 	}
-	printf("tid=%d EBUSYじゃなかったぞ\n", tid);
+	DEBUG_PRINTF("tid=%d EBUSYじゃなかったぞ\n", tid);
 
 	if (type & 128) {
-		printf("wasi-libc type & 128 違うな通らない.\n");
+		DEBUG_PRINTF("wasi-libc type & 128 違うな通らない.\n");
 		if (!self->robust_list.off) {
 			self->robust_list.off = (char*)&m->_m_lock-(char *)&m->_m_next;
 #ifdef __wasilibc_unmodified_upstream
@@ -53,7 +54,7 @@ int __pthread_mutex_trylock_owner(pthread_mutex_t *m)
 	}
 	
 	    /* ←ここは「CASが成功した」場合だけ通る。好きなログを入れてOK */
-    printf("[trylock_owner set, EBUSYじゃなくて_m_lockも書き変わってなかった] m=%p old=0x%x new=0x%x own=%d self=%p tid=%d type=%d\n",
+    DEBUG_PRINTF("[trylock_owner set, EBUSYじゃなくて_m_lockも書き変わってなかった] m=%p old=0x%x new=0x%x own=%d self=%p tid=%d type=%d\n",
            m, old, tid, tid & 0x3fffffff, self, self->tid, type & 15);
 
 success:

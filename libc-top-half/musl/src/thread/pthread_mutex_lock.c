@@ -1,4 +1,5 @@
 #include "pthread_impl.h"
+#include "wasi_debug.h"
 
 int __pthread_mutex_lock(pthread_mutex_t *m)
 {
@@ -7,7 +8,7 @@ int __pthread_mutex_lock(pthread_mutex_t *m)
 	if ((m->_m_type&15) == PTHREAD_MUTEX_NORMAL
 	    && !a_cas(&m->_m_lock, 0, EBUSY)){
 
-		printf("[mtx_unlock] m=%p lock=0x%x own=%d self=%p tid=%d waiters=%d count=%d\n",
+		DEBUG_PRINTF("[mtx_unlock] m=%p lock=0x%x own=%d self=%p tid=%d waiters=%d count=%d\n",
 			   m, m->_m_lock, own, self, self->tid, m->_m_waiters, m->_m_count);
 		// EBUSY状態にする
 		return 0;
@@ -18,13 +19,13 @@ int __pthread_mutex_lock(pthread_mutex_t *m)
 
 	self = __pthread_self();
     int own_before = m->_m_lock & 0x3fffffff;
-    printf("[mtx_lock before] m=%p lock=0x%x own=%d self=%p tid=%d waiters=%d count=%d\n",
+    DEBUG_PRINTF("[mtx_lock before] m=%p lock=0x%x own=%d self=%p tid=%d waiters=%d count=%d\n",
            m, m->_m_lock, own_before, self, self->tid, m->_m_waiters, m->_m_count);
 
     int ret = __pthread_mutex_timedlock(m, 0);
 
     int own_after = m->_m_lock & 0x3fffffff;
-    printf("[mtx_lock after ] m=%p lock=0x%x own=%d self=%p tid=%d waiters=%d count=%d ret=%d\n",
+    DEBUG_PRINTF("[mtx_lock after ] m=%p lock=0x%x own=%d self=%p tid=%d waiters=%d count=%d ret=%d\n",
            m, m->_m_lock, own_after, self, self->tid, m->_m_waiters, m->_m_count, ret);
 
     return ret;

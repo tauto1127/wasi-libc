@@ -8,7 +8,12 @@ NM ?= $(patsubst %clang,%llvm-nm,$(filter-out ccache sccache,$(CC)))
 ifeq ($(origin AR), default)
 AR = $(patsubst %clang,%llvm-ar,$(filter-out ccache sccache,$(CC)))
 endif
+ifneq ($(DEBUG_OUTPUT), yes)
 EXTRA_CFLAGS ?= -O2 -DNDEBUG
+else
+EXTRA_CFLAGS ?= -O2 -DWASI_LIBC_DEBUG
+endif
+
 # The directory where we build the sysroot.
 SYSROOT ?= $(CURDIR)/sysroot
 # A directory to install to for "make install".

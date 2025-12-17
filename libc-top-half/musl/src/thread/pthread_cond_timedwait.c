@@ -1,4 +1,5 @@
 #include "pthread_impl.h"
+#include "wasi_debug.h"
 
 #ifndef __wasilibc_unmodified_upstream
 #include <common/clock.h>
@@ -88,7 +89,7 @@ int __pthread_cond_timedwait(pthread_cond_t *restrict c, pthread_mutex_t *restri
 
 	// プロセス間共有かどうか
 	if (c->_c_shared) {
-		printf("Shared condition variable wait\n");
+		DEBUG_PRINTF("Shared condition variable wait\n");
 		shared = 1;
 		fut = &c->_c_seq;
 		seq = c->_c_seq;

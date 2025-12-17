@@ -1,4 +1,5 @@
 #include "pthread_impl.h"
+#include "wasi_debug.h"
 
 int __pthread_mutex_unlock(pthread_mutex_t *m)
 {
@@ -14,7 +15,7 @@ int __pthread_mutex_unlock(pthread_mutex_t *m)
     int own = m->_m_lock & 0x3fffffff;
 
 	if (type != PTHREAD_MUTEX_NORMAL) {
-		printf("mutex_normalじゃない\n");
+		DEBUG_PRINTF("mutex_normalじゃない\n");
 		self = __pthread_self();
 		old = m->_m_lock;
 		int own = old & 0x3fffffff;
@@ -49,7 +50,7 @@ int __pthread_mutex_unlock(pthread_mutex_t *m)
 	}
 #else
 		cont = a_swap(&m->_m_lock, new);
-		printf("[mtx_unlock after swap] m=%p lock=0x%x own=%d self=%p tid=%d cont=%d\n",
+		DEBUG_PRINTF("[mtx_unlock after swap] m=%p lock=0x%x own=%d self=%p tid=%d cont=%d\n",
 	   m, m->_m_lock, m->_m_lock & 0x3fffffff, self, self->tid, cont);
 #endif
 	if (type != PTHREAD_MUTEX_NORMAL && !priv) {
@@ -60,7 +61,7 @@ int __pthread_mutex_unlock(pthread_mutex_t *m)
 	}
 	if (waiters || cont<0)
 		__wake(&m->_m_lock, 1, priv);
-	    printf("[mtx_unlock after notify] m=%p lock=0x%x own=%d self=%p tid=%d\n",
+	    DEBUG_PRINTF("[mtx_unlock after notify] m=%p lock=0x%x own=%d self=%p tid=%d\n",
            m, m->_m_lock, m->_m_lock & 0x3fffffff, self, self->tid);
 	return 0;
 }

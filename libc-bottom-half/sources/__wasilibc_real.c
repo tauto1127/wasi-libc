@@ -13,6 +13,8 @@
 #include <wasi/api.h>
 #include <string.h>
 
+extern int printf(const char *, ...);
+
 int32_t __imported_wasi_snapshot_preview1_args_get(int32_t arg0, int32_t arg1) __attribute__((
     __import_module__("wasi_snapshot_preview1"),
     __import_name__("args_get")
@@ -559,6 +561,7 @@ __wasi_errno_t __wasi_poll_oneoff(
     __wasi_size_t nsubscriptions,
     __wasi_size_t *retptr0
 ){
+    // printf("__wasi_poll_oneoff called(wasi-libc) \n");
     int32_t ret = __imported_wasi_snapshot_preview1_poll_oneoff((int32_t) in, (int32_t) out, (int32_t) nsubscriptions, (int32_t) retptr0);
     return (uint16_t) ret;
 }

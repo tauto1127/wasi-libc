@@ -114,6 +114,7 @@ void *__copy_tls(unsigned char *mem)
 	uintptr_t *dtv;
 
 #ifdef TLS_ABOVE_TP
+	// 表示なし
 	dtv = (uintptr_t*)(mem + libc.tls_size) - (libc.tls_cnt + 1);
 
 	mem += -((uintptr_t)mem + sizeof(struct pthread)) & (libc.tls_align-1);

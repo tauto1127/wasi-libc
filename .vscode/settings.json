@@ -1,0 +1,24 @@
+{
+    "files.associations": {
+        "array": "c",
+        "bitset": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "utility": "c",
+        "mman.h": "c",
+        "pthread_arch.h": "c",
+        "mutex": "c",
+        "cmath": "c",
+        "type_traits": "c",
+        "complex": "c",
+        "set": "c"
+    },
+    "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools",
+    "makefile.preConfigureArgs": [
+        "--compile-commands-dir=${workspaceFolder}"
+    ],
+    "clangd.arguments": [
+      "--compile-commands-dir=${workspaceFolder}"
+    ],
+    // "C_Cpp.default.compileCommands": "${workspaceFolder}/compile_commands.json"
+}

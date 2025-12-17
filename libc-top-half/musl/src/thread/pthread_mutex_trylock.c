@@ -2,6 +2,7 @@
 
 int __pthread_mutex_trylock_owner(pthread_mutex_t *m)
 {
+	// ここまで来てないな
 	int old, own;
 	int type = m->_m_type;
 	pthread_t self = __pthread_self();
@@ -9,6 +10,7 @@ int __pthread_mutex_trylock_owner(pthread_mutex_t *m)
 
 	old = m->_m_lock;
 	own = old & 0x3fffffff;
+	// printf("mutex=%p lock=%x self=%p tid=%d\n", m, m->_m_lock, self, self->tid);
 	if (own == tid) {
 		if ((type&8) && m->_m_count<0) {
 			old &= 0x40000000;
@@ -24,9 +26,15 @@ int __pthread_mutex_trylock_owner(pthread_mutex_t *m)
 #ifdef __wasilibc_unmodified_upstream
 	if (own == 0x3fffffff) return ENOTRECOVERABLE;
 #endif
-	if (own || (old && !(type & 4))) return EBUSY;
+	if (own || (old && !(type & 4))) {
+		printf("[trylock_owner EBUSY] m=%p old=0x%x new=0x%x own=%d self=%p tid=%d type=%d\n",
+			   m, old, tid, tid & 0x3fffffff, self, self->tid, type & 15);
+		return EBUSY;
+	}
+	printf("tid=%d EBUSYじゃなかったぞ\n", tid);
 
 	if (type & 128) {
+		printf("wasi-libc type & 128 違うな通らない.\n");
 		if (!self->robust_list.off) {
 			self->robust_list.off = (char*)&m->_m_lock-(char *)&m->_m_next;
 #ifdef __wasilibc_unmodified_upstream
@@ -43,6 +51,10 @@ int __pthread_mutex_trylock_owner(pthread_mutex_t *m)
 		if ((type&12)==12 && m->_m_waiters) return ENOTRECOVERABLE;
 		return EBUSY;
 	}
+	
+	    /* ←ここは「CASが成功した」場合だけ通る。好きなログを入れてOK */
+    printf("[trylock_owner set, EBUSYじゃなくて_m_lockも書き変わってなかった] m=%p old=0x%x new=0x%x own=%d self=%p tid=%d type=%d\n",
+           m, old, tid, tid & 0x3fffffff, self, self->tid, type & 15);
 
 success:
 	if ((type&8) && m->_m_waiters) {
@@ -72,8 +84,16 @@ success:
 
 int __pthread_mutex_trylock(pthread_mutex_t *m)
 {
-	if ((m->_m_type&15) == PTHREAD_MUTEX_NORMAL)
-		return a_cas(&m->_m_lock, 0, EBUSY) & EBUSY;
+	// 一旦スキップする．詳細なデバッグのため
+	// if ((m->_m_type&15) == PTHREAD_MUTEX_NORMAL) {
+    //     int old = a_cas(&m->_m_lock, 0, EBUSY);
+    //     if (!(old & EBUSY))
+    //         printf("[trylock normal set] m=%p old=0x%x new=0x%x own=%d\n",
+    //                m, old, EBUSY, EBUSY & 0x3fffffff);
+    //     return old & EBUSY;
+    // }
+	// if ((m->_m_type&15) == PTHREAD_MUTEX_NORMAL)
+	// 	return a_cas(&m->_m_lock, 0, EBUSY) & EBUSY;
 	return __pthread_mutex_trylock_owner(m);
 }
 

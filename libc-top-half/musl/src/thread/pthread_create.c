@@ -14,6 +14,12 @@
 
 #include <stdalign.h>
 #include <assert.h>
+#define CSI "\x1b["
+#define RESET CSI "0m"
+#define YELLOW(txt) CSI "33m" txt RESET
+/* 文字列リテラルを色付けして printf するヘルパ */
+#define cprintf(color_txt_literal, ...) \
+    printf(color_txt_literal "\n", ##__VA_ARGS__)
 
 static void dummy_0()
 {
@@ -349,6 +355,12 @@ static void init_file_lock(FILE *f)
 
 int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict attrp, void *(*entry)(void *), void *restrict arg)
 {
+	printf("\x1b[31mpthread called un\x1b[0m\n");
+    printf("=        wasi-libc debugging1129        =\n");
+#ifdef __wasilibc_unmodified_upstream
+	// 呼ばれなかったので，not defined
+	printf("__wasilibc_unmodified_upstream defined\n");
+#endif
 	int ret, c11 = (attrp == __ATTRP_C11_THREAD);
 	size_t size, guard;
 	struct pthread *self, *new;
@@ -389,15 +401,24 @@ int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict att
 #endif
 		libc.threaded = 1;
 	}
-	if (attrp && !c11) attr = *attrp;
+	if (attrp && !c11) {
+		// 実行されず
+		// スレッド属性が設定されたらこっちかな
+		printf("attrp && !c11\n");
+		attr = *attrp;
+	}
 
 	__acquire_ptc();
 	if (!attrp || c11) {
+		// ここ実行される
+		printf(YELLOW("!attrp || c11"));
 		attr._a_stacksize = __default_stacksize;
 		attr._a_guardsize = __default_guardsize;
 	}
 
 	if (attr._a_stackaddr) {
+		cprintf(YELLOW("a_stackaddrは定義されている"));
+		// されてない
 #ifdef __wasilibc_unmodified_upstream
 		size_t need = libc.tls_size + __pthread_tsd_size;
 #else
@@ -422,6 +443,7 @@ int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict att
 		}
 		guard = 0;
 	} else {
+		// こっちが実行
 		guard = ROUND(attr._a_guardsize);
 		size = guard + ROUND(attr._a_stacksize
 #ifdef __wasilibc_unmodified_upstream
@@ -432,8 +454,12 @@ int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict att
 	}
 
 	if (!tsd) {
+		// tsdはあるみたい．
+		cprintf(YELLOW("tsdなし"));
 #ifdef __wasilibc_unmodified_upstream
 		if (guard) {
+			// 基本ガードはなさそう
+			printf("guardあり\n");
 			map = __mmap(0, size, PROT_NONE, MAP_PRIVATE|MAP_ANON, -1, 0);
 			if (map == MAP_FAILED) goto fail;
 			if (__mprotect(map+guard, size-guard, PROT_READ|PROT_WRITE)
@@ -459,6 +485,8 @@ int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict att
 #endif
 		tsd = map + size - __pthread_tsd_size;
 		if (!stack) {
+			printf(YELLOW("!stack\n"));
+			// yes
 #ifdef __wasilibc_unmodified_upstream
 			stack = tsd - libc.tls_size;
 #else
@@ -467,12 +495,14 @@ int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict att
 			stack_limit = map + guard;
 		}
 	}
+	
 
 #ifdef __wasilibc_unmodified_upstream
 	new = __copy_tls(tsd - libc.tls_size);
 #else
 	new_tls_base = __copy_tls(tsd - tls_size);
 	tls_offset = new_tls_base - tls_base;
+	// ここでpthread構造体を初期化？
 	new = (void*)((uintptr_t)self + tls_offset);
 #endif
 	new->map_base = map;
@@ -573,6 +603,7 @@ int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict att
 	if (ret < 0) {
 		ret = -EAGAIN;
 	} else {
+		printf("atomic_store\n");
 		atomic_store((atomic_int *) &(new->tid), ret);
 	}
 #endif

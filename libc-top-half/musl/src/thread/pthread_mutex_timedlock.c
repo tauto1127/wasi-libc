@@ -57,6 +57,7 @@ static int pthread_mutex_timedlock_pi(pthread_mutex_t *restrict m, const struct 
 
 int __pthread_mutex_timedlock(pthread_mutex_t *restrict m, const struct timespec *restrict at)
 {
+	int own_before = m->_m_lock & 0x3fffffff;
 	if ((m->_m_type&15) == PTHREAD_MUTEX_NORMAL
 	    && !a_cas(&m->_m_lock, 0, EBUSY))
 		return 0;
@@ -64,6 +65,9 @@ int __pthread_mutex_timedlock(pthread_mutex_t *restrict m, const struct timespec
 	int type = m->_m_type;
 	int r, t, priv = (type & 128) ^ 128;
 
+	pthread_t self = __pthread_self();
+	printf("[timedlock enter] m=%p lock=0x%x own=%d self=%p tid=%d type=%d\n",
+	   m, m->_m_lock, own_before, self, self->tid, m->_m_type & 15);
 	r = __pthread_mutex_trylock(m);
 	if (r != EBUSY) return r;
 
@@ -83,11 +87,17 @@ int __pthread_mutex_timedlock(pthread_mutex_t *restrict m, const struct timespec
 		    && own == __pthread_self()->tid)
 			return EDEADLK;
 
+
 		a_inc(&m->_m_waiters);
 		t = r | 0x80000000;
 		a_cas(&m->_m_lock, r, t);
 		r = __timedwait(&m->_m_lock, t, CLOCK_REALTIME, at, priv);
 		a_dec(&m->_m_waiters);
+		// ログ
+		int own_after = m->_m_lock & 0x3fffffff;
+    printf("[timedlock exit ] m=%p lock=0x%x own=%d self=%p tid=%d ret=%d\n",
+           m, m->_m_lock, own_after, self, self->tid, r);
+	// 
 		if (r && r != EINTR) break;
 	}
 	return r;
